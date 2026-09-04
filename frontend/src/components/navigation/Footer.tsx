@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { SchoolFundLogo } from '../ui/Logo';
 
 export const Footer: React.FC = () => {
   return (
@@ -9,10 +10,11 @@ export const Footer: React.FC = () => {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-white">
-                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                <SchoolFundLogo className="w-3.5 h-3.5 text-accent" />
               </div>
               <span className="font-bold text-text text-base">SchoolFund</span>
             </div>
+
             <p className="text-xs text-text-muted max-w-sm">
               Simple, transparent contribution, dues, project funding, and expense coordination for student communities across Nigeria.
             </p>

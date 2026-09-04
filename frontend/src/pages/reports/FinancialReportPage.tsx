@@ -10,8 +10,10 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { SchoolFundLogo } from '../../components/ui/Logo';
 import { FinancialReport } from '../../types';
 import { api } from '../../services/api';
+
 
 interface FinancialReportPageProps {
   fundId: number;
@@ -101,8 +103,9 @@ export const FinancialReportPage: React.FC<FinancialReportPageProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-6 h-6 rounded bg-primary text-white flex items-center justify-center">
-                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                <SchoolFundLogo className="w-3.5 h-3.5 text-accent" />
               </div>
+
               <span className="font-bold text-base text-text">SchoolFund Financial Audit</span>
             </div>
             <h1 className="text-2xl font-black text-text uppercase tracking-tight">

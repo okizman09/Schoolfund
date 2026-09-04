@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { ShieldCheck, Menu, X, LogOut, User as UserIcon, PlusCircle, LayoutDashboard, ReceiptText, ArrowRight } from 'lucide-react';
 import { User } from '../../types';
 import { Button } from '../ui/Button';
+import { SchoolFundLogo } from '../ui/Logo';
+
 
 interface NavbarProps {
   user: User | null;
@@ -48,8 +50,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-primary-dark transition-colors">
-              <ShieldCheck className="w-5 h-5 text-accent" />
+              <SchoolFundLogo className="w-5 h-5 text-accent" />
             </div>
+
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-text">SchoolFund</span>
               <span className="text-[10px] uppercase font-semibold text-text-muted tracking-wider -mt-1">Nigeria</span>

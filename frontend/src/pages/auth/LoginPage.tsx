@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { SchoolFundLogo } from '../../components/ui/Logo';
 import { api, setAuthToken } from '../../services/api';
+
 import { User } from '../../types';
 
 interface LoginPageProps {
@@ -48,8 +50,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-white shadow-subtle mb-1">
-            <ShieldCheck className="w-6 h-6 text-accent" />
+            <SchoolFundLogo className="w-6 h-6 text-accent" />
           </div>
+
           <h2 className="text-2xl font-bold text-text tracking-tight">Sign in to SchoolFund</h2>
           <p className="text-xs text-text-muted">
             Access your active contribution funds and financial reports
