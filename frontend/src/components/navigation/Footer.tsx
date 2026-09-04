@@ -14,7 +14,7 @@ export const Footer: React.FC = () => {
               <span className="font-bold text-text text-base">SchoolFund</span>
             </div>
             <p className="text-xs text-text-muted max-w-sm">
-              Simple, transparent contribution and expense coordination for student communities in Lagos, Nigeria.
+              Simple, transparent contribution, dues, project funding, and expense coordination for student communities across Nigeria.
             </p>
           </div>
 
@@ -33,8 +33,9 @@ export const Footer: React.FC = () => {
             <span>•</span>
             <span>Zero WhatsApp chaos</span>
             <span>•</span>
-            <span>Lagos, Nigeria</span>
+            <span>All 36 States & FCT Abuja, Nigeria</span>
           </div>
+
         </div>
 
         <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center text-xs text-text-subtle gap-3">

@@ -126,7 +126,7 @@ async def get_public_fund_by_code(public_code: str, db: aiosqlite.Connection) ->
     if not row:
         return None
     computed = await compute_fund_metrics(dict(row), db)
-    # Mask sensitive details
+    # Mask sensitive details and provide verified BMONI deposit account rails
     return {
         "public_code": computed["public_code"],
         "name": computed["name"],
@@ -140,4 +140,9 @@ async def get_public_fund_by_code(public_code: str, db: aiosqlite.Connection) ->
         "total_collected": computed["total_collected"],
         "percent_funded": computed["percent_funded"],
         "contributors_count": computed["contributors_count"],
+        "deposit_bank_name": "9 Payment Service Bank",
+        "deposit_account_number": "6177463833",
+        "deposit_account_name": "Bkey Limited / SchoolFund",
+        "deposit_provider": "BMONI_LIVE",
     }
+

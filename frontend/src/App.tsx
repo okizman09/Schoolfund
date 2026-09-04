@@ -203,33 +203,155 @@ export function App() {
           <TransactionsPage onNavigate={navigate} />
         )}
 
-        {/* Fallback informational views for landing sub-links */}
-        {(currentRoute === 'how-it-works' || currentRoute === 'for-organizers' || currentRoute === 'about') && (
-          <div className="max-w-4xl mx-auto px-4 py-16 space-y-6">
-            <h1 className="text-3xl font-bold text-text capitalize">
-              {currentRoute.replace('-', ' ')}
-            </h1>
-            <p className="text-sm text-text-muted leading-relaxed">
-              SchoolFund was designed specifically for Nigerian university students, class governors, and campus communities to eliminate the friction of unverified group transfers, lost WhatsApp screenshots, and spreadsheet reconciliation.
-            </p>
-            <div className="p-6 bg-white border border-border rounded-lg space-y-4">
-              <h3 className="text-base font-bold text-text">Why SchoolFund?</h3>
-              <ul className="space-y-2 text-xs text-text-muted list-disc pl-5">
-                <li>Instant shareable contribution link (<span className="font-mono">/join/SF-XXXX</span>) without forcing member account creation</li>
-                <li>Backend verification powered by BMONI financial infrastructure</li>
-                <li>Live progress bars and instant pledge tracking</li>
-                <li>Direct project expense logging and categorization</li>
-                <li>Executive one-click financial audit reports ready to print or save as PDF</li>
-              </ul>
+        {/* Rich informational views for landing sub-links */}
+        {currentRoute === 'how-it-works' && (
+          <div className="max-w-4xl mx-auto px-4 py-16 space-y-8">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-accent uppercase tracking-wider">Guide & Architecture</span>
+              <h1 className="text-3xl font-bold text-text">How SchoolFund Works</h1>
+              <p className="text-sm text-text-muted leading-relaxed">
+                A simple, 4-step transparent workflow built specifically for students in Nigeria to replace informal WhatsApp receipts and manual spreadsheet reconciliation.
+              </p>
             </div>
-            <button
-              onClick={() => navigate('landing')}
-              className="text-xs font-semibold text-accent hover:underline"
-            >
-              ← Back to homepage
-            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 bg-white border border-border rounded-xl space-y-3">
+                <span className="w-7 h-7 rounded-full bg-accent-light text-accent text-xs font-bold flex items-center justify-center">1</span>
+                <h3 className="text-base font-bold text-text">1. Create a Contribution Fund</h3>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  The student organizer, class governor, or club executive creates a fund in under a minute—specifying target amount, contribution per member, deadline, and project description.
+                </p>
+              </div>
+
+              <div className="p-6 bg-white border border-border rounded-xl space-y-3">
+                <span className="w-7 h-7 rounded-full bg-accent-light text-accent text-xs font-bold flex items-center justify-center">2</span>
+                <h3 className="text-base font-bold text-text">2. Share Secure Public Link</h3>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  SchoolFund generates a masked link (e.g. <span className="font-mono text-primary">/join/SF-XXXX</span>). Classmates can contribute instantly from any mobile browser without having to create an account.
+                </p>
+              </div>
+
+              <div className="p-6 bg-white border border-border rounded-xl space-y-3">
+                <span className="w-7 h-7 rounded-full bg-accent-light text-accent text-xs font-bold flex items-center justify-center">3</span>
+                <h3 className="text-base font-bold text-text">3. Live BMONI Bank Rails</h3>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  Powered by BMONI Embedded infrastructure and 9 Payment Service Bank (9PSB). Contributors can pay via instant checkout or direct Nigerian bank transfer with real-time verification.
+                </p>
+              </div>
+
+              <div className="p-6 bg-white border border-border rounded-xl space-y-3">
+                <span className="w-7 h-7 rounded-full bg-accent-light text-accent text-xs font-bold flex items-center justify-center">4</span>
+                <h3 className="text-base font-bold text-text">4. Expenses & 1-Click Audit</h3>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  Organizers log project expenditures against collected funds. Members see live remaining balance, and organizers can export an executive audit report to PDF with one click.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => navigate('landing')}
+                className="text-xs font-semibold text-accent hover:underline"
+              >
+                ← Back to homepage
+              </button>
+              <button
+                onClick={() => navigate('register')}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Create your first fund →
+              </button>
+            </div>
           </div>
         )}
+
+        {currentRoute === 'for-organizers' && (
+          <div className="max-w-4xl mx-auto px-4 py-16 space-y-8">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-accent uppercase tracking-wider">Campus Leadership</span>
+              <h1 className="text-3xl font-bold text-text">For Class Governors & Campus Organizers</h1>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Managing group funds for 50 to 500+ classmates is stressful. SchoolFund protects your reputation, eliminates disputes, and provides proof of every Naira.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-5 bg-white border border-border rounded-xl space-y-2.5">
+                <h3 className="text-sm font-bold text-text">No Personal Account Exposure</h3>
+                <p className="text-xs text-text-muted">
+                  Keep your personal savings account separate. Contributions go through dedicated virtual accounts so you never mix personal and class money.
+                </p>
+              </div>
+              <div className="p-5 bg-white border border-border rounded-xl space-y-2.5">
+                <h3 className="text-sm font-bold text-text">Live Paid vs Pending List</h3>
+                <p className="text-xs text-text-muted">
+                  Instantly see who has paid and who has pending pledges without manually ticking names in a notebook or updating Google Sheets.
+                </p>
+              </div>
+              <div className="p-5 bg-white border border-border rounded-xl space-y-2.5">
+                <h3 className="text-sm font-bold text-text">Printable Audit Statements</h3>
+                <p className="text-xs text-text-muted">
+                  Print or export clean financial balance sheets ready to share in class group chats or submit to Departmental HODs and Faculty Deans.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => navigate('landing')}
+                className="text-xs font-semibold text-accent hover:underline"
+              >
+                ← Back to homepage
+              </button>
+              <button
+                onClick={() => navigate('register')}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Get started as an organizer →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentRoute === 'about' && (
+          <div className="max-w-4xl mx-auto px-4 py-16 space-y-8">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-accent uppercase tracking-wider">About SchoolFund</span>
+              <h1 className="text-3xl font-bold text-text">Building Financial Trust in Nigerian Higher Institutions</h1>
+              <p className="text-sm text-text-muted leading-relaxed">
+                SchoolFund is dedicated to transforming student financial coordination across all 36 States and Abuja FCT.
+              </p>
+            </div>
+
+            <div className="p-6 bg-white border border-border rounded-xl space-y-4 text-xs text-text-muted leading-relaxed">
+              <p>
+                Every semester in Nigerian universities, polytechnics, and colleges, millions of Naira are collected for class dues, departmental levies, course material printing, final year projects, excursions, and student welfare.
+              </p>
+              <p>
+                Because these funds are collected into personal bank accounts with screenshots dumped in chaotic WhatsApp groups, organizers face constant accusations of embezzlement, transactions get lost, and students lose trust.
+              </p>
+              <p>
+                SchoolFund solves this by leveraging modern BMONI Embedded financial rails to bring banking transparency to campus life. Every payment is verified, every expense is accounted for, and every student can see the real-time health of their fund.
+              </p>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => navigate('landing')}
+                className="text-xs font-semibold text-accent hover:underline"
+              >
+                ← Back to homepage
+              </button>
+              <button
+                onClick={() => navigate('register')}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Join SchoolFund today →
+              </button>
+            </div>
+          </div>
+        )}
+
       </main>
 
       <Footer />

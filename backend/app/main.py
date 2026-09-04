@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import init_db, get_db
-from .routers import auth, funds, contributions, expenses, reports, ai
+from .routers import auth, funds, contributions, expenses, reports, ai, webhooks
 from .services.auth_service import get_current_user
 
 @asynccontextmanager
@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="SchoolFund API",
-    description="Modern contribution and expense management API for student communities in Lagos, Nigeria.",
+    description="Transparent contribution, dues, project funding, and expense management API for student communities across Nigeria.",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -44,6 +44,7 @@ app.include_router(contributions.router)
 app.include_router(expenses.router)
 app.include_router(reports.router)
 app.include_router(ai.router)
+app.include_router(webhooks.router)
 
 @app.get("/api/health", tags=["Health"])
 async def health_check():

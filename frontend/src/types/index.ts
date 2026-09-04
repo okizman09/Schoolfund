@@ -50,7 +50,12 @@ export interface PublicFund {
   total_collected: number;
   percent_funded: number;
   contributors_count: number;
+  deposit_bank_name?: string;
+  deposit_account_number?: string;
+  deposit_account_name?: string;
+  deposit_provider?: string;
 }
+
 
 export interface Contribution {
   id: number;

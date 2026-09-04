@@ -85,6 +85,37 @@ export const CreateFundPage: React.FC<CreateFundPageProps> = ({ onNavigate }) =>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Quick Contribution Category Chips */}
+          <div>
+            <label className="block text-xs font-semibold text-text mb-2">
+              Contribution Type / Quick Template
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Class / Dept Dues', name: 'Accounting 200L Departmental Dues', target: '250000', contrib: '2500', desc: 'Annual departmental dues, association badge, and course materials.' },
+                { label: 'Final Year Project', name: 'CSC 401 Final Year Capstone Project', target: '150000', contrib: '5000', desc: 'Hardware components, laboratory reagents, cloud hosting, and survey incentives.' },
+                { label: 'Excursion / Field Trip', name: 'Mechanical Eng. Industrial Visit', target: '450000', contrib: '15000', desc: 'Chartered coaster buses, accommodation, and industrial entry passes.' },
+                { label: 'Dinner / Event', name: 'Class of 2026 Annual Dinner & Awards', target: '350000', contrib: '7000', desc: 'Banquet venue rental, catering, sound system, and award plaques.' },
+                { label: 'Student Welfare Relief', name: 'Classmate Emergency Medical Relief', target: '120000', contrib: '2000', desc: 'Emergency peer welfare and hospital bill support fund.' },
+                { label: 'Hostel Maintenance', name: 'Hostel Generator & Amenities Levy', target: '80000', contrib: '3000', desc: 'Generator diesel fueling, borehole pump repair, and common room supplies.' },
+              ].map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setName(preset.name);
+                    setTargetAmount(preset.target);
+                    setContributionAmount(preset.contrib);
+                    setDescription(preset.desc);
+                  }}
+                  className="px-2.5 py-1 text-xs rounded-full border border-border bg-[#F8FAFA] hover:bg-[#EAF5F2] hover:border-accent hover:text-accent font-medium transition-colors text-text"
+                >
+                  + {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-text mb-1.5" htmlFor="fund-name">
               Fund name <span className="text-danger">*</span>
@@ -94,11 +125,12 @@ export const CreateFundPage: React.FC<CreateFundPageProps> = ({ onNavigate }) =>
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. CSC 301 Final Project"
+              placeholder="e.g. CSC 301 Final Project or Faculty Dues"
               className="w-full px-3.5 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent bg-white text-text"
               required
             />
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

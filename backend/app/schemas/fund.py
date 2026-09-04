@@ -44,3 +44,8 @@ class FundPublicResponse(BaseModel):
     total_collected: float
     percent_funded: float
     contributors_count: int
+    deposit_bank_name: Optional[str] = "9 Payment Service Bank"
+    deposit_account_number: Optional[str] = "6177463833"
+    deposit_account_name: Optional[str] = "Bkey Limited / SchoolFund"
+    deposit_provider: Optional[str] = "BMONI_LIVE"
+

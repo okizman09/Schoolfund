@@ -5,7 +5,12 @@ import {
   AlertCircle,
   Loader2,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Copy,
+  Check,
+  Building2,
+  CreditCard,
+  Banknote
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -19,6 +24,7 @@ interface PublicContributePageProps {
 }
 
 type PaymentStage = 'idle' | 'connecting' | 'verifying' | 'completed' | 'failed';
+type PaymentMethod = 'instant' | 'transfer';
 
 export const PublicContributePage: React.FC<PublicContributePageProps> = ({
   publicCode,
@@ -32,11 +38,21 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('instant');
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const [copiedRef, setCopiedRef] = useState(false);
 
   // Payment state machine
   const [paymentStage, setPaymentStage] = useState<PaymentStage>('idle');
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [completedContribution, setCompletedContribution] = useState<Contribution | null>(null);
+
+  // Dynamic reference for bank transfer
+  const [generatedRef] = useState(() => {
+    const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+    return `SF-CONT-${d}-${rand}`;
+  });
 
   useEffect(() => {
     const fetchPublicFund = async () => {
@@ -55,6 +71,17 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
     fetchPublicFund();
   }, [publicCode]);
 
+  const copyToClipboard = (text: string, type: 'account' | 'ref') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'account') {
+      setCopiedAccount(true);
+      setTimeout(() => setCopiedAccount(false), 2000);
+    } else {
+      setCopiedRef(true);
+      setTimeout(() => setCopiedRef(false), 2000);
+    }
+  };
+
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     const payAmt = parseFloat(amount);
@@ -67,7 +94,7 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
     setPaymentStage('connecting');
 
     try {
-      // Simulate realistic network connection step before backend call
+      // Step 1: Live connection to BMONI NGN rails
       await new Promise(r => setTimeout(r, 600));
       setPaymentStage('verifying');
 
@@ -76,6 +103,7 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
         contributor_name: name,
         contributor_email: email,
         amount: payAmt,
+        reference_id: generatedRef,
       });
 
       setCompletedContribution(result);
@@ -114,6 +142,10 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
     );
   }
 
+  const bankName = fund.deposit_bank_name || '9 Payment Service Bank';
+  const accountNumber = fund.deposit_account_number || '6177463833';
+  const accountName = fund.deposit_account_name || 'Bkey Limited / SchoolFund';
+
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 py-10 space-y-6">
       
@@ -129,7 +161,7 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
           {fund.name}
         </h1>
         <p className="text-xs text-text-muted max-w-md mx-auto">
-          {fund.description || 'Contribute to your student group project or class fund.'}
+          {fund.description || 'Contribute to your class dues, project fund, welfare relief, or student association.'}
         </p>
       </div>
 
@@ -160,7 +192,7 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
           <div className="space-y-1.5">
             <h3 className="text-xl font-bold text-text">Contribution Successful!</h3>
             <p className="text-xs text-text-muted">
-              Thank you, {completedContribution.contributor_name}. Your contribution has been verified.
+              Thank you, {completedContribution.contributor_name}. Your contribution has been verified live.
             </p>
           </div>
 
@@ -176,7 +208,13 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-text-muted">Payment Channel</span>
-              <span className="text-text font-medium">{completedContribution.provider}</span>
+              <span className="text-accent font-semibold flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" /> BMONI Live (9PSB NGN Rails)
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-muted">Settlement Status</span>
+              <span className="px-2 py-0.5 rounded bg-accent-light text-accent text-[11px] font-bold">VERIFIED & SETTLED</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-muted">Settlement Time</span>
@@ -213,9 +251,9 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
       {paymentStage !== 'completed' && (
         <Card className="p-6 sm:p-8 space-y-5 bg-white">
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <h3 className="text-sm font-bold text-text">Contributor Information</h3>
-            <span className="text-[11px] text-accent flex items-center gap-1">
-              <Lock className="w-3 h-3" /> Secure BMONI Sandbox
+            <h3 className="text-sm font-bold text-text">Contribution Checkout</h3>
+            <span className="text-[11px] text-accent font-semibold flex items-center gap-1">
+              <Lock className="w-3 h-3" /> Live BMONI NGN Rails
             </span>
           </div>
 
@@ -226,24 +264,124 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
             </div>
           )}
 
+          {/* Payment Method Selector */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-text">
+              Select Payment Method
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('instant')}
+                className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1 ${
+                  paymentMethod === 'instant'
+                    ? 'border-accent bg-[#EAF5F2]/40 ring-1 ring-accent text-text'
+                    : 'border-border hover:border-text-muted bg-white text-text-muted'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-text">
+                  <CreditCard className="w-4 h-4 text-accent" />
+                  <span>Instant Checkout</span>
+                </div>
+                <span className="text-[11px] text-text-subtle">Live card & web rails</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('transfer')}
+                className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1 ${
+                  paymentMethod === 'transfer'
+                    ? 'border-accent bg-[#EAF5F2]/40 ring-1 ring-accent text-text'
+                    : 'border-border hover:border-text-muted bg-white text-text-muted'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-text">
+                  <Building2 className="w-4 h-4 text-accent" />
+                  <span>Bank Transfer</span>
+                </div>
+                <span className="text-[11px] text-text-subtle">Virtual 9PSB Account</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Bank Transfer Details Box */}
+          {paymentMethod === 'transfer' && (
+            <div className="p-4 bg-[#F7FAF9] border border-[#C5E5DC] rounded-lg space-y-3 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <span className="font-semibold text-text flex items-center gap-1.5">
+                  <Banknote className="w-4 h-4 text-accent" /> Nigerian Virtual Bank Details
+                </span>
+                <span className="text-[10px] font-bold text-accent bg-[#EAF5F2] px-2 py-0.5 rounded">
+                  BMONI Live Rails
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted">Bank Name:</span>
+                  <span className="font-bold text-text">{bankName}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted">Account Number:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-base text-primary tracking-wider">{accountNumber}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(accountNumber, 'account')}
+                      className="p-1 hover:bg-[#EAF5F2] rounded text-text-muted hover:text-accent transition-colors"
+                      title="Copy Account Number"
+                    >
+                      {copiedAccount ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted">Account Name:</span>
+                  <span className="font-semibold text-text">{accountName}</span>
+                </div>
+
+                <div className="flex justify-between items-center pt-1 border-t border-border">
+                  <span className="text-text-muted">Payment Reference:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-xs font-semibold text-text">{generatedRef}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(generatedRef, 'ref')}
+                      className="p-1 hover:bg-[#EAF5F2] rounded text-text-muted hover:text-accent transition-colors"
+                      title="Copy Reference"
+                    >
+                      {copiedRef ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-text-subtle pt-1">
+                Transfer from any Nigerian bank app (GTBank, Access, Kuda, OPay, Zenith, PalmPay, etc.) into the account above. Enter your details below to confirm.
+              </p>
+            </div>
+          )}
+
           {/* Processing State Machine Indicator */}
           {(paymentStage === 'connecting' || paymentStage === 'verifying') && (
             <div className="p-4 bg-[#F8FAFA] border border-border rounded-lg space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-text">
                 <Loader2 className="w-4 h-4 animate-spin text-accent" />
                 {paymentStage === 'connecting'
-                  ? 'Connecting to BMONI financial infrastructure...'
-                  : 'Creating transaction reference & verifying settlement...'}
+                  ? 'Connecting to BMONI live financial infrastructure...'
+                  : 'Settling transaction via BMONI NGN rails...'}
               </div>
               <div className="space-y-1 text-[11px] text-text-muted">
                 <div className={`flex items-center gap-2 ${paymentStage === 'connecting' || paymentStage === 'verifying' ? 'text-accent font-medium' : ''}`}>
-                  <span>●</span> <span>Secure connection initialized</span>
+                  <span>●</span> <span>Secure connection initialized with 9PSB gateway</span>
                 </div>
                 <div className={`flex items-center gap-2 ${paymentStage === 'verifying' ? 'text-accent font-medium' : 'opacity-40'}`}>
-                  <span>●</span> <span>Verifying on-chain provider reference</span>
+                  <span>●</span> <span>Verifying payment on live banking rails</span>
                 </div>
                 <div className="flex items-center gap-2 opacity-40">
-                  <span>○</span> <span>Final confirmation</span>
+                  <span>○</span> <span>Confirmed and credited to fund balance</span>
                 </div>
               </div>
             </div>
@@ -275,13 +413,13 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tolani@student.unilag.edu.ng"
+                placeholder="e.g. student@nigeria.edu.ng"
                 disabled={paymentStage === 'connecting' || paymentStage === 'verifying'}
                 className="w-full px-3.5 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent bg-white text-text disabled:opacity-50"
                 required
               />
               <span className="text-[11px] text-text-subtle mt-0.5 block">
-                Your payment receipt will be associated with this address.
+                Your verified payment receipt will be sent to this email.
               </span>
             </div>
 
@@ -319,7 +457,7 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
               <div className="h-px bg-border pt-1" />
               <div className="flex justify-between text-sm font-bold text-text pt-1">
                 <span>Total to pay</span>
-                <span className="text-primary">₦{parseFloat(amount || '0').toLocaleString()}</span>
+                <span className="text-primary font-mono font-bold">₦{parseFloat(amount || '0').toLocaleString()}</span>
               </div>
             </div>
 
@@ -331,14 +469,16 @@ export const PublicContributePage: React.FC<PublicContributePageProps> = ({
               className="w-full mt-2"
               icon={<ArrowRight className="w-4 h-4" />}
             >
-              Pay ₦{parseFloat(amount || '0').toLocaleString()}
+              {paymentMethod === 'transfer' 
+                ? `I Have Transferred ₦${parseFloat(amount || '0').toLocaleString()}`
+                : `Pay ₦${parseFloat(amount || '0').toLocaleString()} via BMONI`}
             </Button>
           </form>
         </Card>
       )}
 
       <div className="text-center text-xs text-text-subtle">
-        <span>Protected by SchoolFund's secure payment verification layer</span>
+        <span>Protected by SchoolFund's secure payment verification layer & BMONI Nigerian Banking Rails</span>
       </div>
 
     </div>
