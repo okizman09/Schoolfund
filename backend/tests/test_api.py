@@ -83,7 +83,8 @@ def test_expense_creation_and_balance_deduction():
         "title": "USB Cable & Breadboard Jumper Pack",
         "description": "Hardware testing supplies",
         "amount": 2500.0,
-        "category": "Equipment"
+        "category": "Equipment",
+        "auto_approve": True
     }
     exp_res = client.post("/api/expenses", json=expense_payload, headers=headers)
     assert exp_res.status_code == 200

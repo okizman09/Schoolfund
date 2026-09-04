@@ -12,7 +12,14 @@ import {
   Check,
   ExternalLink,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  ArrowUpRight,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Building2,
+  ShieldCheck,
+  Wallet
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -20,7 +27,7 @@ import { Badge } from '../../components/ui/Badge';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Modal } from '../../components/ui/Modal';
 import { AiFundAnalysisModal } from '../../components/ai/AiFundAnalysisModal';
-import { Fund, Contribution, Expense, ExpenseCategory } from '../../types';
+import { Fund, Contribution, Expense, ExpenseCategory, BankItem } from '../../types';
 import { api } from '../../services/api';
 
 interface FundDetailPageProps {
@@ -28,10 +35,39 @@ interface FundDetailPageProps {
   onNavigate: (route: string, params?: any) => void;
 }
 
+const DEFAULT_BANKS: BankItem[] = [
+  { name: 'Access Bank', code: '044' },
+  { name: 'Citibank Nigeria', code: '023' },
+  { name: 'Ecobank Nigeria', code: '050' },
+  { name: 'Fidelity Bank', code: '070' },
+  { name: 'First Bank of Nigeria', code: '011' },
+  { name: 'First City Monument Bank (FCMB)', code: '214' },
+  { name: 'Guaranty Trust Bank (GTBank)', code: '058' },
+  { name: 'Heritage Bank', code: '030' },
+  { name: 'Keystone Bank', code: '082' },
+  { name: 'Kuda Bank', code: '090267' },
+  { name: 'Moniepoint MFB', code: '090393' },
+  { name: 'OPay (PayCom)', code: '090405' },
+  { name: 'PalmPay', code: '090175' },
+  { name: 'Polaris Bank', code: '076' },
+  { name: 'Providus Bank', code: '101' },
+  { name: 'Stanbic IBTC Bank', code: '039' },
+  { name: 'Standard Chartered Bank', code: '068' },
+  { name: 'Sterling Bank', code: '232' },
+  { name: 'Suntrust Bank', code: '100' },
+  { name: 'Taj Bank', code: '302' },
+  { name: 'Union Bank of Nigeria', code: '032' },
+  { name: 'United Bank for Africa (UBA)', code: '033' },
+  { name: 'Unity Bank', code: '215' },
+  { name: 'Wema Bank', code: '035' },
+  { name: 'Zenith Bank', code: '057' },
+];
+
 export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNavigate }) => {
   const [fund, setFund] = useState<Fund | null>(null);
   const [contributors, setContributors] = useState<Contribution[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [banks, setBanks] = useState<BankItem[]>(DEFAULT_BANKS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,26 +77,39 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
   const [showAiModal, setShowAiModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // New Expense form state
+  // Withdrawal / Expense form state
   const [expenseTitle, setExpenseTitle] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('Materials');
   const [expenseDescription, setExpenseDescription] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientAccount, setRecipientAccount] = useState('');
+  const [recipientBank, setRecipientBank] = useState(DEFAULT_BANKS[6].name); // GTBank
+  const [recipientBankCode, setRecipientBankCode] = useState(DEFAULT_BANKS[6].code);
+  const [autoApprove, setAutoApprove] = useState(true);
   const [expenseLoading, setExpenseLoading] = useState(false);
   const [expenseError, setExpenseError] = useState<string | null>(null);
+
+  // Action approval state
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   const loadFundData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [fundData, contribData, expData] = await Promise.all([
+      const [fundData, contribData, expData, banksData] = await Promise.all([
         api.getFund(fundId),
         api.getContributors(fundId),
         api.getExpenses(fundId),
+        api.getBanks().catch(() => DEFAULT_BANKS),
       ]);
       setFund(fundData);
       setContributors(contribData);
       setExpenses(expData);
+      if (banksData && banksData.length > 0) {
+        setBanks(banksData);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load fund details');
     } finally {
@@ -82,6 +131,15 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleBankChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedBankName = e.target.value;
+    setRecipientBank(selectedBankName);
+    const found = banks.find((b) => b.name === selectedBankName);
+    if (found) {
+      setRecipientBankCode(found.code);
+    }
+  };
+
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(expenseAmount);
@@ -89,6 +147,21 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
       setExpenseError('Please enter a valid expense title and amount');
       return;
     }
+    if (fund && amt > fund.available_balance) {
+      setExpenseError(
+        `Amount exceeds available balance of ₦${fund.available_balance.toLocaleString()}. Please adjust requested amount.`
+      );
+      return;
+    }
+    if (!recipientAccount || recipientAccount.length < 10) {
+      setExpenseError('Please enter a valid 10-digit Nigerian NUBAN account number');
+      return;
+    }
+    if (!recipientName) {
+      setExpenseError('Please enter the recipient account name');
+      return;
+    }
+
     setExpenseLoading(true);
     setExpenseError(null);
     try {
@@ -98,17 +171,61 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
         amount: amt,
         category: expenseCategory,
         description: expenseDescription,
+        recipient_name: recipientName,
+        recipient_account_number: recipientAccount,
+        recipient_bank_name: recipientBank,
+        recipient_bank_code: recipientBankCode,
+        auto_approve: autoApprove,
       });
       setShowExpenseModal(false);
       setExpenseTitle('');
       setExpenseAmount('');
       setExpenseDescription('');
-      // Reload fund to reflect new expense calculation
+      setRecipientName('');
+      setRecipientAccount('');
+      // Reload fund to reflect new balance calculation
       await loadFundData();
+      setActionFeedback(
+        autoApprove
+          ? 'Withdrawal approved & disbursed successfully via BMONI rails.'
+          : 'Withdrawal request submitted for approval.'
+      );
+      setTimeout(() => setActionFeedback(null), 4000);
     } catch (err: any) {
-      setExpenseError(err.message || 'Failed to add expense');
+      setExpenseError(err.message || 'Failed to submit withdrawal request');
     } finally {
       setExpenseLoading(false);
+    }
+  };
+
+  const handleApprove = async (expenseId: number) => {
+    setActionLoadingId(expenseId);
+    try {
+      await api.approveExpense(expenseId, 'Approved by fund administrator');
+      setActionFeedback('Expense approved & disbursed via BMONI Nigerian rails.');
+      await loadFundData();
+      setTimeout(() => setActionFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to approve expense');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleReject = async (expenseId: number) => {
+    const reason = prompt('Please provide a reason for rejecting this withdrawal:');
+    if (reason === null) return; // user cancelled prompt
+
+    setActionLoadingId(expenseId);
+    try {
+      await api.rejectExpense(expenseId, reason || 'Rejected by fund administrator');
+      setActionFeedback('Withdrawal request rejected.');
+      await loadFundData();
+      setTimeout(() => setActionFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to reject expense');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -158,16 +275,25 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
         </div>
       </div>
 
+      {actionFeedback && (
+        <div className="p-3 bg-[#EAF5F2] border border-[#C5E5DC] text-accent rounded-lg text-xs font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{actionFeedback}</span>
+        </div>
+      )}
+
       {/* Hero Overview Card */}
       <Card className="p-6 sm:p-8 space-y-6 bg-surface">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
           
           <div className="space-y-2 flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight">
-              {fund.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight">
+                {fund.name}
+              </h1>
+            </div>
             <p className="text-xs sm:text-sm text-text-muted leading-relaxed max-w-2xl">
-              {fund.description || 'Student group contribution fund.'}
+              {fund.description || 'Verified group contribution and expense fund.'}
             </p>
             {fund.deadline && (
               <div className="text-xs text-text-subtle pt-1">
@@ -195,12 +321,12 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
               Invite
             </Button>
             <Button
-              variant="outline"
+              variant="primary"
               size="sm"
               onClick={() => setShowExpenseModal(true)}
-              icon={<PlusCircle className="w-4 h-4" />}
+              icon={<ArrowUpRight className="w-4 h-4 text-accent" />}
             >
-              Add expense
+              Request Withdrawal
             </Button>
             <Button
               variant="outline"
@@ -211,7 +337,7 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
               Financial report
             </Button>
             <Button
-              variant="primary"
+              variant="outline"
               size="sm"
               onClick={() => setShowAiModal(true)}
               icon={<Sparkles className="w-4 h-4 text-accent" />}
@@ -250,27 +376,35 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
             </div>
 
             <div className="p-3.5 bg-warning-light rounded-md border border-[#F5E6B8]">
-              <span className="block text-[11px] uppercase font-semibold text-warning">Total Spent</span>
+              <span className="block text-[11px] uppercase font-semibold text-warning">Settled Payouts</span>
               <div className="text-lg font-bold text-warning mt-0.5">
                 ₦{fund.total_spent.toLocaleString()}
               </div>
             </div>
 
-            <div className="p-3.5 bg-[#F8FAFA] rounded-md border border-border">
-              <span className="block text-[11px] uppercase font-semibold text-text-muted">Remaining Balance</span>
-              <div className={`text-lg font-bold mt-0.5 ${fund.remaining_balance < 0 ? 'text-danger' : 'text-text'}`}>
-                ₦{fund.remaining_balance.toLocaleString()}
+            <div className="p-3.5 bg-[#F0FDF4] rounded-md border border-[#BBF7D0]">
+              <div className="flex items-center justify-between">
+                <span className="block text-[11px] uppercase font-semibold text-emerald-800">Available to Withdraw</span>
+                <Wallet className="w-3.5 h-3.5 text-emerald-600" />
               </div>
+              <div className="text-lg font-bold text-emerald-700 mt-0.5">
+                ₦{fund.available_balance.toLocaleString()}
+              </div>
+              {fund.pending_expenses > 0 && (
+                <div className="text-[10px] text-amber-700 font-medium mt-0.5">
+                  ₦{fund.pending_expenses.toLocaleString()} pending approval
+                </div>
+              )}
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Two Column Layout: Contributors on Left / Expenses on Right */}
+      {/* Two Column Layout: Contributors on Left / Expenses & Withdrawals on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left: Contributors Section (7 cols) */}
-        <div className="lg:col-span-7 space-y-4">
+        {/* Left: Contributors Section (6 cols) */}
+        <div className="lg:col-span-6 space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-base font-bold text-text flex items-center gap-2">
               <Users className="w-4 h-4 text-accent" />
@@ -349,46 +483,113 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
           )}
         </div>
 
-        {/* Right: Expenses Section (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Right: Governed Expenses & Withdrawals Section (6 cols) */}
+        <div className="lg:col-span-6 space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-base font-bold text-text flex items-center gap-2">
               <Receipt className="w-4 h-4 text-warning" />
-              Recorded Expenses ({expenses.length})
+              Withdrawals & Expenses ({expenses.length})
             </h3>
             <button
               onClick={() => setShowExpenseModal(true)}
               className="text-xs font-semibold text-accent hover:underline flex items-center gap-1"
             >
-              <PlusCircle className="w-3.5 h-3.5" /> Add
+              <PlusCircle className="w-3.5 h-3.5" /> Request
             </button>
           </div>
 
           {expenses.length === 0 ? (
             <Card className="text-center py-10 space-y-2">
-              <p className="text-xs text-text-muted">No expenses recorded yet.</p>
+              <p className="text-xs text-text-muted">No expenses or withdrawals recorded yet.</p>
               <Button size="sm" variant="outline" onClick={() => setShowExpenseModal(true)}>
-                Record first expense
+                Request first withdrawal
               </Button>
             </Card>
           ) : (
             <div className="border border-border rounded-lg bg-surface divide-y divide-border overflow-hidden shadow-subtle">
               {expenses.map((exp) => (
-                <div key={exp.id} className="p-3.5 space-y-1.5">
+                <div key={exp.id} className="p-4 space-y-2.5">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-xs text-text">{exp.title}</h4>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-xs text-text">{exp.title}</h4>
+                        {/* Status Badge */}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${
+                            exp.status === 'success'
+                              ? 'bg-[#EAF5F2] text-accent'
+                              : exp.status === 'pending'
+                              ? 'bg-amber-100 text-amber-800'
+                              : exp.status === 'processing'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {exp.status === 'success' && <CheckCircle2 className="w-3 h-3" />}
+                          {exp.status === 'pending' && <Clock className="w-3 h-3" />}
+                          {exp.status === 'processing' && <Clock className="w-3 h-3 animate-spin" />}
+                          {exp.status === 'rejected' && <XCircle className="w-3 h-3" />}
+                          {exp.status ? exp.status.toUpperCase() : 'SETTLED'}
+                        </span>
+                      </div>
+
                       {exp.description && (
                         <p className="text-[11px] text-text-muted line-clamp-1">{exp.description}</p>
                       )}
                     </div>
-                    <span className="font-bold text-xs text-text">₦{exp.amount.toLocaleString()}</span>
+                    <span className="font-bold text-sm text-text">₦{exp.amount.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center text-[10px] pt-1">
+
+                  {/* Recipient & Bank NUBAN Rail Information */}
+                  {(exp.recipient_name || exp.recipient_bank_name) && (
+                    <div className="p-2 bg-[#F8FAFA] rounded border border-border text-[11px] flex items-center justify-between text-text-muted">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-text-subtle shrink-0" />
+                        <span>
+                          To: <strong className="text-text">{exp.recipient_name || 'Vendor'}</strong> •{' '}
+                          {exp.recipient_bank_name} {exp.recipient_account_number ? `(${exp.recipient_account_number})` : ''}
+                        </span>
+                      </div>
+                      {exp.reference_id && (
+                        <span className="font-mono text-[10px] text-accent font-medium hidden sm:inline">
+                          {exp.reference_id}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Governance Actions for Pending Expenses */}
+                  {exp.status === 'pending' && (
+                    <div className="flex items-center justify-between pt-1 border-t border-dashed border-border">
+                      <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Awaiting administrator approval
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={actionLoadingId === exp.id}
+                          onClick={() => handleReject(exp.id)}
+                          className="px-2.5 py-1 text-[11px] font-semibold text-danger hover:bg-danger-light rounded transition-colors"
+                        >
+                          Reject
+                        </button>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          loading={actionLoadingId === exp.id}
+                          onClick={() => handleApprove(exp.id)}
+                          icon={<Check className="w-3.5 h-3.5" />}
+                        >
+                          Approve Payout
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-[10px] text-text-subtle pt-0.5">
                     <span className="bg-[#F1F4F3] px-2 py-0.5 rounded text-text-muted font-medium">
                       {exp.category}
                     </span>
-                    <span className="text-text-subtle">
+                    <span>
                       {new Date(exp.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -445,11 +646,11 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
         </div>
       </Modal>
 
-      {/* Add Expense Modal */}
+      {/* Request Governed Withdrawal / Expense Modal */}
       <Modal
         isOpen={showExpenseModal}
         onClose={() => setShowExpenseModal(false)}
-        title="Record Project Expense"
+        title="Request Withdrawal / Expense Payout"
         maxWidth="md"
       >
         <form onSubmit={handleCreateExpense} className="space-y-4">
@@ -459,9 +660,15 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
             </div>
           )}
 
+          {/* Available balance indicator banner */}
+          <div className="p-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-md flex items-center justify-between text-xs">
+            <span className="text-emerald-800 font-medium">Available balance to withdraw:</span>
+            <span className="font-bold text-emerald-800">₦{fund.available_balance.toLocaleString()}</span>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-text mb-1" htmlFor="exp-title">
-              Expense title <span className="text-danger">*</span>
+              Expense / Withdrawal Title <span className="text-danger">*</span>
             </label>
             <input
               id="exp-title"
@@ -486,6 +693,7 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
                 onChange={(e) => setExpenseAmount(e.target.value)}
                 placeholder="25000"
                 min={1}
+                max={fund.available_balance}
                 className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent bg-white text-text"
                 required
               />
@@ -511,6 +719,64 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
             </div>
           </div>
 
+          {/* Nigerian Bank Disbursement Account Details */}
+          <div className="p-3.5 bg-[#F8FAFA] rounded-md border border-border space-y-3">
+            <span className="block text-[11px] uppercase font-bold text-text tracking-wide flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-accent" /> Recipient Nigerian Bank Account
+            </span>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-text-muted mb-1" htmlFor="recipient-bank">
+                Select Nigerian Bank
+              </label>
+              <select
+                id="recipient-bank"
+                value={recipientBank}
+                onChange={handleBankChange}
+                className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent bg-white text-text"
+              >
+                {banks.map((b) => (
+                  <option key={b.code} value={b.name}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-text-muted mb-1" htmlFor="recipient-account">
+                  NUBAN Account Number <span className="text-danger">*</span>
+                </label>
+                <input
+                  id="recipient-account"
+                  type="text"
+                  maxLength={10}
+                  value={recipientAccount}
+                  onChange={(e) => setRecipientAccount(e.target.value.replace(/\D/g, ''))}
+                  placeholder="0123456789"
+                  className="w-full px-3 py-2 text-xs font-mono border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent bg-white text-text"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-text-muted mb-1" htmlFor="recipient-name">
+                  Account Name / Vendor <span className="text-danger">*</span>
+                </label>
+                <input
+                  id="recipient-name"
+                  type="text"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="e.g. University Xerox Press"
+                  className="w-full px-3 py-2 text-xs border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent bg-white text-text"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-text mb-1" htmlFor="exp-desc">
               Description / Receipt Note
@@ -525,7 +791,21 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
             />
           </div>
 
-          <div className="pt-2 border-t border-border flex justify-end gap-2">
+          {/* Governance Auto-Disburse Switch */}
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              id="auto-approve-toggle"
+              type="checkbox"
+              checked={autoApprove}
+              onChange={(e) => setAutoApprove(e.target.checked)}
+              className="rounded border-border text-accent focus:ring-accent h-4 w-4"
+            />
+            <label htmlFor="auto-approve-toggle" className="text-xs text-text cursor-pointer select-none">
+              Approve & execute BMONI payout immediately as Fund Administrator
+            </label>
+          </div>
+
+          <div className="pt-3 border-t border-border flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -540,7 +820,7 @@ export const FundDetailPage: React.FC<FundDetailPageProps> = ({ fundId, onNaviga
               size="sm"
               loading={expenseLoading}
             >
-              Save Expense
+              {autoApprove ? 'Disburse Payout' : 'Submit Request'}
             </Button>
           </div>
         </form>

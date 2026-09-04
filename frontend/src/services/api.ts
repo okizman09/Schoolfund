@@ -5,6 +5,8 @@ import {
   PublicFund,
   Contribution,
   Expense,
+  ExpenseCreatePayload,
+  BankItem,
   FinancialReport,
   AiAnalysis,
   Transaction,
@@ -100,17 +102,27 @@ export const api = {
     reference_id?: string;
   }) => request<Contribution>('/contributions', { method: 'POST', body: JSON.stringify(data) }),
 
-  // Expenses
+  // Expenses & Withdrawals
   getExpenses: (fundId: number) =>
     request<Expense[]>(`/funds/${fundId}/expenses`),
 
-  addExpense: (data: {
-    fund_id: number;
-    title: string;
-    description?: string;
-    amount: number;
-    category: string;
-  }) => request<Expense>('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  getBanks: () =>
+    request<BankItem[]>('/expenses/banks'),
+
+  addExpense: (data: ExpenseCreatePayload) =>
+    request<Expense>('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+
+  approveExpense: (expenseId: number, note?: string) =>
+    request<Expense>(`/expenses/${expenseId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ note: note || '' })
+    }),
+
+  rejectExpense: (expenseId: number, note?: string) =>
+    request<Expense>(`/expenses/${expenseId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ note: note || '' })
+    }),
 
   // Reports
   getReport: (fundId: number) =>

@@ -23,20 +23,29 @@ async def compute_fund_metrics(fund: dict, db: aiosqlite.Connection) -> dict:
     total_collected = float(collected_row[0])
     contributors_count = int(collected_row[1])
 
-    # 2. Total spent
+    # 2. Total spent (settled/successful payouts only)
     cursor = await db.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE fund_id = ?;",
+        "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE fund_id = ? AND (status = 'success' OR status IS NULL);",
         (fund_id,)
     )
     spent_row = await cursor.fetchone()
     total_spent = float(spent_row[0])
 
+    # 3. Pending expenses (in request, approval, or processing pipeline)
+    cursor = await db.execute(
+        "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE fund_id = ? AND status IN ('pending', 'approved', 'processing');",
+        (fund_id,)
+    )
+    pending_row = await cursor.fetchone()
+    pending_expenses = float(pending_row[0])
+
     remaining_balance = total_collected - total_spent
+    available_balance = max(0.0, remaining_balance - pending_expenses)
     target = float(fund["target_amount"])
     percent_funded = round((total_collected / target * 100), 1) if target > 0 else 0.0
 
     # Determine signature Fund Health
-    if remaining_balance < 0:
+    if remaining_balance < 0 or (remaining_balance - pending_expenses) < 0:
         health_status = "Attention Needed"
     elif percent_funded >= 80:
         health_status = "Excellent"
@@ -52,6 +61,8 @@ async def compute_fund_metrics(fund: dict, db: aiosqlite.Connection) -> dict:
         "total_collected": total_collected,
         "total_spent": total_spent,
         "remaining_balance": remaining_balance,
+        "available_balance": available_balance,
+        "pending_expenses": pending_expenses,
         "percent_funded": percent_funded,
         "contributors_count": contributors_count,
         "health_status": health_status,

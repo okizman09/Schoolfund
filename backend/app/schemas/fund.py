@@ -27,6 +27,8 @@ class FundResponse(BaseModel):
     total_collected: float = 0.0
     total_spent: float = 0.0
     remaining_balance: float = 0.0
+    available_balance: float = 0.0
+    pending_expenses: float = 0.0
     percent_funded: float = 0.0
     contributors_count: int = 0
     health_status: str = "Healthy"

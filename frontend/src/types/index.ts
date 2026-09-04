@@ -1,5 +1,6 @@
 export type FundStatus = 'active' | 'completed' | 'cancelled';
 export type ContributionStatus = 'pending' | 'processing' | 'success' | 'failed' | 'cancelled';
+export type ExpenseStatus = 'pending' | 'approved' | 'processing' | 'success' | 'failed' | 'rejected';
 export type ExpenseCategory = 'Equipment' | 'Materials' | 'Printing' | 'Transport' | 'Venue' | 'Other';
 
 export interface User {
@@ -32,6 +33,8 @@ export interface Fund {
   total_collected: number;
   total_spent: number;
   remaining_balance: number;
+  available_balance: number;
+  pending_expenses: number;
   percent_funded: number;
   contributors_count: number;
   health_status: 'Healthy' | 'Excellent' | 'On Track' | 'Attention Needed' | 'Starting';
@@ -71,6 +74,12 @@ export interface Contribution {
   completed_at: string | null;
 }
 
+export interface BankItem {
+  name: string;
+  code: string;
+  slug?: string;
+}
+
 export interface Expense {
   id: number;
   fund_id: number;
@@ -78,8 +87,30 @@ export interface Expense {
   description: string | null;
   amount: number;
   category: ExpenseCategory;
+  recipient_name?: string | null;
+  recipient_account_number?: string | null;
+  recipient_bank_name?: string | null;
+  recipient_bank_code?: string | null;
+  status: ExpenseStatus;
+  approved_by?: number | null;
+  approved_at?: string | null;
+  reference_id?: string | null;
+  provider?: string | null;
   created_by: number;
   created_at: string;
+}
+
+export interface ExpenseCreatePayload {
+  fund_id: number;
+  title: string;
+  description?: string;
+  amount: number;
+  category: ExpenseCategory;
+  recipient_name?: string;
+  recipient_account_number?: string;
+  recipient_bank_name?: string;
+  recipient_bank_code?: string;
+  auto_approve?: boolean;
 }
 
 export interface CategoryBreakdown {

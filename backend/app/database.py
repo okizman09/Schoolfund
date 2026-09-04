@@ -78,12 +78,47 @@ async def init_db():
                 description TEXT,
                 amount REAL NOT NULL,
                 category TEXT NOT NULL,
+                recipient_name TEXT,
+                recipient_account_number TEXT,
+                recipient_bank_name TEXT,
+                recipient_bank_code TEXT,
+                status TEXT DEFAULT 'pending',
+                approved_by INTEGER,
+                approved_at TIMESTAMP,
+                reference_id TEXT,
+                provider TEXT DEFAULT 'BMONI_LIVE',
+                metadata TEXT,
                 created_by INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (fund_id) REFERENCES funds(id),
-                FOREIGN KEY (created_by) REFERENCES users(id)
+                FOREIGN KEY (created_by) REFERENCES users(id),
+                FOREIGN KEY (approved_by) REFERENCES users(id)
             );
         """)
+
+        # Dynamic schema migration for existing SQLite database
+        cursor = await db.execute("PRAGMA table_info(expenses);")
+        raw_rows = await cursor.fetchall()
+        columns = [r[1] if isinstance(r, (tuple, list)) else r["name"] for r in raw_rows]
+        new_cols = {
+            "recipient_name": "TEXT",
+            "recipient_account_number": "TEXT",
+            "recipient_bank_name": "TEXT",
+            "recipient_bank_code": "TEXT",
+            "status": "TEXT DEFAULT 'pending'",
+            "approved_by": "INTEGER",
+            "approved_at": "TIMESTAMP",
+            "reference_id": "TEXT",
+            "provider": "TEXT DEFAULT 'BMONI_LIVE'",
+            "metadata": "TEXT"
+        }
+        for col, col_type in new_cols.items():
+            if col not in columns:
+                await db.execute(f"ALTER TABLE expenses ADD COLUMN {col} {col_type};")
+        
+        # Ensure any pre-existing legacy expenses are marked as settled
+        await db.execute("UPDATE expenses SET status = 'success' WHERE status IS NULL;")
+
 
         await db.execute("""
             CREATE TABLE IF NOT EXISTS transactions (
